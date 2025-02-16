@@ -32,13 +32,85 @@ static plugmod_t* idaapi init()
 }
 
 void renameFunction(func_t* pfn, const char* funcName) {
-	func_item_iterator_t fii(pfn);
-	ea_t ea = fii.current();
+	//func_item_iterator_t fii(pfn);
+	//ea_t ea = fii.current();
 	//set_name(ea, funcName, SN_NON_PUBLIC | SN_NON_WEAK | SN_NOLIST | SN_FORCE | SN_NODUMMY);
-	set_name(ea, funcName,  SN_FORCE | SN_NODUMMY);
-	mark_cfunc_dirty(ea);
+	set_name(pfn->start_ea, funcName, SN_FORCE | SN_NODUMMY);
+	mark_cfunc_dirty(pfn->start_ea);
 }
 
+void renameVariables(func_t* pfn, const char* funcName) {
+	func_item_iterator_t fii(pfn);
+	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr())
+	{
+		ea_t ea = fii.current();
+		set_name(ea, "new_function_name", SN_NON_PUBLIC | SN_NON_WEAK | SN_NOLIST | SN_FORCE | SN_NODUMMY);
+	}
+	mark_cfunc_dirty(pfn->start_ea);
+}
+
+void analyzeFunctionElements(func_t* pfn) {
+	// Получение декомпилированного кода  
+	hexrays_failure_t hf;
+	cfuncptr_t cfunc = decompile(pfn, &hf, DECOMP_WARNINGS);
+	if (cfunc == nullptr) {
+		warning("#error \"%a: %s", hf.errea, hf.desc().c_str());
+		return;
+	}
+
+	// Перебор локальных переменных  
+	const lvars_t& lvars = *cfunc->get_lvars();
+	for (auto& lvar : lvars) {
+		if (lvar.is_arg_var()) {
+			msg("Argument: %s\n", lvar.name.c_str());
+		}
+		else {
+			msg("Local variable: %s\n", lvar.name.c_str());
+		}
+	}
+
+	// Перебор всех элементов функции  
+	func_item_iterator_t fii(pfn);
+	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr()) {
+		ea_t ea = fii.current();
+		if (is_code(get_flags(ea))) {
+			//msg("Instruction at address: %a\n", ea);  
+
+			// Проверка операндов инструкции на глобальные переменные  
+			insn_t insn;
+			decode_insn(&insn, ea);
+			for (int i = 0; i < UA_MAXOP; i++) {
+				if (insn.ops[i].type == o_mem) {
+					qstring var_name;
+					if (get_name(&var_name, insn.ops[i].addr) > 0) {
+						msg("Global variable used at address: %a, name: %s\n", insn.ops[i].addr, var_name.c_str());
+					}
+					else {
+						msg("Global variable used at address: %a\n", insn.ops[i].addr);
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void getDecompiledCode(func_t* pfn) {
+	hexrays_failure_t hf;
+	cfuncptr_t cfunc = decompile(pfn, &hf, DECOMP_WARNINGS);
+	if (cfunc == nullptr)
+	{
+		warning("#error \"%a: %s", hf.errea, hf.desc().c_str());
+		return;
+	}
+	const strvec_t& sv = cfunc->get_pseudocode();
+	for (int i = 0; i < sv.size(); i++)
+	{
+		qstring buf;
+		tag_remove(&buf, sv[i].line);
+		msg("%s\n", buf.c_str());
+	}
+}
 
 // TODO :: 
 // 1. Написать передачу декомпилированного кода в deepseekAI
@@ -47,46 +119,20 @@ void renameFunction(func_t* pfn, const char* funcName) {
 //--------------------------------------------------------------------------
 bool idaapi plugin_ctx_t::run(size_t)
 {
+	ea_t screen_ea = get_screen_ea();
 	func_t* pfn = get_func(get_screen_ea());
-
-	std::string funcName = "new_function_name";
-	renameFunction(pfn, funcName.c_str());
-
-	/////////////////////////////////////////////////////////
-	//	 // Инициализация итератора для элементов функции
-	//func_item_iterator_t fii(pfn);
-	////for (bool ok = fii.set(pfn); ok; ok = fii.next_addr())
-	////{
-	//ea_t ea = fii.current();
-	//// Пример изменения имени переменной
-	//set_name(ea, "new_function_name", SN_NON_PUBLIC | SN_NON_WEAK | SN_NOLIST | SN_FORCE | SN_NODUMMY);
-	////}
-	//mark_cfunc_dirty(ea);
-	//// Пример изменения имени функции
-	////set_name(pfn->start_ea, "new_function_name_test", SN_NON_PUBLIC | SN_NON_WEAK | SN_NOLIST | SN_FORCE | SN_NODUMMY);
-	/////////////////////////////////////////////////////////
-
 	if (pfn == nullptr)
 	{
 		warning("Please position the cursor within a function");
 		return true;
 	}
-	hexrays_failure_t hf;
-	cfuncptr_t cfunc = decompile(pfn, &hf, DECOMP_WARNINGS);
-	if (cfunc == nullptr)
-	{
-		warning("#error \"%a: %s", hf.errea, hf.desc().c_str());
-		return true;
-	}
-	msg("%a: successfully decompiled\n", pfn->start_ea);
+	msg("Current function start address: %a\n", pfn->start_ea);
 
-	const strvec_t& sv = cfunc->get_pseudocode();
-	for (int i = 0; i < sv.size(); i++)
-	{
-		qstring buf;
-		tag_remove(&buf, sv[i].line);
-		msg("%s\n", buf.c_str());
-	}
+	qstring funcName = "new_function_name";
+	renameFunction(pfn, funcName.c_str());
+	//renameVariables(pfn, "sss");
+	analyzeFunctionElements(pfn);
+	//getDecompiledCode(pfn);
 	return true;
 }
 
