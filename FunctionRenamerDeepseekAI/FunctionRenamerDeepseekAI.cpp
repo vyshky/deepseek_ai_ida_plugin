@@ -10,7 +10,7 @@
 
 #include <hexrays.hpp>
 
- //--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t
 {
 	~plugin_ctx_t()
@@ -29,6 +29,25 @@ static plugmod_t* idaapi init()
 	msg("Hex-rays version %s has been detected, %s ready to use\n",
 		hxver, PLUGIN.wanted_name);
 	return new plugin_ctx_t;
+}
+
+void find_and_print_calls(func_t* pfn) {
+	func_item_iterator_t fii(pfn);
+	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr()) {
+		ea_t ea = fii.current();
+		insn_t insn;
+		if (decode_insn(&insn, ea)) {
+			if (insn.itype == 18 || insn.itype == 86 || insn.itype == 16) {
+				qstring callee_name;
+				if (get_name(&callee_name, insn.ops[0].addr) > 0) {
+					msg("Call to function at address: %a, name: %s\n", insn.ops[0].addr, callee_name.c_str());
+				}
+				else {
+					msg("-------------------- Call to function at address: %a\n", insn.ops[0].addr);
+				}
+			}
+		}
+	}
 }
 
 void renameFunction(func_t* pfn, const char* funcName) {
@@ -74,8 +93,6 @@ void analyzeFunctionElements(func_t* pfn) {
 	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr()) {
 		ea_t ea = fii.current();
 		if (is_code(get_flags(ea))) {
-			//msg("Instruction at address: %a\n", ea);  
-
 			// Проверка операндов инструкции на глобальные переменные  
 			insn_t insn;
 			decode_insn(&insn, ea);
@@ -129,10 +146,11 @@ bool idaapi plugin_ctx_t::run(size_t)
 	msg("Current function start address: %a\n", pfn->start_ea);
 
 	qstring funcName = "new_function_name";
-	renameFunction(pfn, funcName.c_str());
+	//renameFunction(pfn, funcName.c_str());
 	//renameVariables(pfn, "sss");
-	analyzeFunctionElements(pfn);
+	//analyzeFunctionElements(pfn);
 	//getDecompiledCode(pfn);
+	find_and_print_calls(pfn);
 	return true;
 }
 
