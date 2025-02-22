@@ -9,8 +9,10 @@
  */
 
 #include <hexrays.hpp>
+#include <map>  
+#include <string> 
 
-//--------------------------------------------------------------------------
+ //--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t
 {
 	~plugin_ctx_t()
@@ -31,6 +33,9 @@ static plugmod_t* idaapi init()
 	return new plugin_ctx_t;
 }
 
+ 
+std::map<std::string, std::string> function_names;
+
 void find_and_print_calls(func_t* pfn) {
 	func_item_iterator_t fii(pfn);
 	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr()) {
@@ -41,24 +46,56 @@ void find_and_print_calls(func_t* pfn) {
 				qstring callee_name;
 				if (get_name(&callee_name, insn.ops[0].addr) > 0) {
 					msg("Call to function at address: %a, name: %s\n", insn.ops[0].addr, callee_name.c_str());
-				}
-				else {
-					msg("-------------------- Call to function at address: %a\n", insn.ops[0].addr);
+					function_names[callee_name.c_str()] = ""; // Save the function name  
 				}
 			}
 		}
 	}
 }
 
-void renameFunction(func_t* pfn, const char* funcName) {
-	//func_item_iterator_t fii(pfn);
-	//ea_t ea = fii.current();
-	//set_name(ea, funcName, SN_NON_PUBLIC | SN_NON_WEAK | SN_NOLIST | SN_FORCE | SN_NODUMMY);
-	set_name(pfn->start_ea, funcName, SN_FORCE | SN_NODUMMY);
-	mark_cfunc_dirty(pfn->start_ea);
+
+bool rename_lvar2(ea_t func_ea, const char* oldname, const char* newname)
+{
+	lvar_saved_info_t info;
+	if (!locate_lvar(&info.ll, func_ea, oldname))
+		return false;
+	info.name = newname;
+	return modify_user_lvar_info(func_ea, MLI_NAME, info);
 }
 
-void renameVariables(func_t* pfn, const char* funcName) {
+
+///////////////////////////////////////////////////////////////////////////////////////////
+void rename_specific_function(const std::string& old_name, const std::string& new_name) {
+	ea_t func_ea = get_name_ea(BADADDR, old_name.c_str());
+	if (func_ea != BADADDR) {
+		set_name(func_ea, new_name.c_str(), SN_FORCE | SN_NODUMMY);
+		function_names[old_name] = new_name;
+		msg("Function %s renamed to %s\n", old_name.c_str(), new_name.c_str());
+	}
+}
+
+void rename_all_functions(func_t* pfn) {
+	int counter = 1;
+	for (auto& entry : function_names) {
+		/*	if (entry.first == "print") {
+				rename_specific_function("print", "print_print");
+			}
+			else {*/
+		qstring new_name = qstring("function_") + std::to_string(counter).c_str();
+		ea_t func_ea = get_name_ea(BADADDR, entry.first.c_str());
+		if (func_ea != BADADDR) {
+			set_name(func_ea, new_name.c_str(), SN_FORCE | SN_NODUMMY);
+			entry.second = new_name.c_str();
+			counter++;
+		}
+		//}
+	}
+	mark_cfunc_dirty(pfn->start_ea);
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+void rename_variables(func_t* pfn, const char* funcName) {
 	func_item_iterator_t fii(pfn);
 	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr())
 	{
@@ -68,7 +105,7 @@ void renameVariables(func_t* pfn, const char* funcName) {
 	mark_cfunc_dirty(pfn->start_ea);
 }
 
-void analyzeFunctionElements(func_t* pfn) {
+void analyze_function_elements(func_t* pfn) {
 	// Получение декомпилированного кода  
 	hexrays_failure_t hf;
 	cfuncptr_t cfunc = decompile(pfn, &hf, DECOMP_WARNINGS);
@@ -111,8 +148,7 @@ void analyzeFunctionElements(func_t* pfn) {
 	}
 }
 
-
-void getDecompiledCode(func_t* pfn) {
+void print_current_decompiled_code(func_t* pfn) {
 	hexrays_failure_t hf;
 	cfuncptr_t cfunc = decompile(pfn, &hf, DECOMP_WARNINGS);
 	if (cfunc == nullptr)
@@ -127,11 +163,12 @@ void getDecompiledCode(func_t* pfn) {
 		tag_remove(&buf, sv[i].line);
 		msg("%s\n", buf.c_str());
 	}
+
 }
 
 // TODO :: 
-// 1. Написать передачу декомпилированного кода в deepseekAI
-// 2. Переименовать все переменные в функции и саму функцию
+// 1. Написать передачу декомпилированного кода в deepseekAI - print_current_decompiled_code()
+// 2. Переименовать все переменные в функции и саму функцию -  find_function, fund_variables,deepseekAI получаем переименованную табличку из функций и переменных, rename_current_function()
 // 3. Вывести на экран измененую функцию перед переименовывание, с подтверждением и возможность изменить функцию 
 //--------------------------------------------------------------------------
 bool idaapi plugin_ctx_t::run(size_t)
@@ -144,13 +181,24 @@ bool idaapi plugin_ctx_t::run(size_t)
 		return true;
 	}
 	msg("Current function start address: %a\n", pfn->start_ea);
-
 	qstring funcName = "new_function_name";
 	//renameFunction(pfn, funcName.c_str());
 	//renameVariables(pfn, "sss");
 	//analyzeFunctionElements(pfn);
 	//getDecompiledCode(pfn);
 	find_and_print_calls(pfn);
+
+	const char* oldname = "v4";
+	const char* newname = "var_444444";
+
+	if (rename_lvar2(screen_ea, oldname, newname)) {
+		msg("variable %s succes renamed %s\n", oldname, newname);
+	}
+	else {
+		msg("error %s\n", oldname);
+	}
+
+	mark_cfunc_dirty(pfn->start_ea);
 	return true;
 }
 
