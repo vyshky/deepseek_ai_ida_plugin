@@ -9,12 +9,11 @@
  */
 
 
-
-
 #include "cpr/cpr.h"
 #include <hexrays.hpp>
 #include <map>  
-#include <string> 
+#include <string>
+
 
  //--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t
@@ -170,105 +169,49 @@ void print_current_decompiled_code(func_t* pfn) {
 
 }
 
+// Функция для записи данных в строку
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+{
+	((std::string*)userp)->append((char*)contents, size * nmemb);
+	return size * nmemb;
+}
 
-
-std::string url = "https://openrouter.ai/api/v1/chat/completions";
-std::string api_key = "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";
-std::string body = R"({
-    "model": "deepseek/deepseek-r1:free",
-    "messages": [
-      {"role": "user", "content": "Напиши код helloworld на асм"}
-    ],
-    "temperature": 0,
-    "top_p": 1,
-    "top_k": 0,
-    "frequency_penalty": 0,
-    "presence_penalty": 0,
-    "repetition_penalty": 1,
-    "min_p": 0,
-    "top_a": 0
-  })";
-cpr::Header headers = { { "Content-Type", "application/json" },
-					   {"Authorization", "Bearer " + api_key } };
-
-
-
-//#include <windows.h>
-#include <wininet.h>
 // Функция для отправки запроса в Deepseek API
+// TODO :: создать промт для переданных данных и для данных которрые должны возвращаться
 void SendRequestToDeepseek()
 {
-	HINTERNET hInternet = InternetOpen(L"WinINet Example", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-	if (hInternet)
+	// Отправка POST-запроса с cpr
+	cpr::Response response = cpr::Post(
+		cpr::Url{ "https://openrouter.ai/api/v1/chat/completions" },
+		cpr::Header{
+			{"Content-Type", "application/json"},
+			{"Authorization", "Bearer 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"}
+		},
+		cpr::Body{ R"({
+            "model": "deepseek/deepseek-r1:free",
+            "messages": [
+                {"role": "user", "content": "Напиши код helloworld на асм"}
+            ],
+            "temperature": 0,
+            "top_p": 1,
+            "top_k": 0,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "repetition_penalty": 1,
+            "min_p": 0,
+            "top_a": 0
+        })" }
+	);
+
+	// Проверяем статус запроса
+	if (response.status_code != 200)
 	{
-		HINTERNET hConnect = InternetConnect(hInternet, L"google.ru", INTERNET_DEFAULT_HTTP_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
-		if (hConnect)
-		{
-			HINTERNET hRequest = HttpOpenRequest(hConnect, L"GET", NULL, NULL, NULL, NULL, 0, 0);
-			if (hRequest)
-			{
-				if (HttpSendRequest(hRequest, NULL, 0, NULL, 0))
-				{
-					char buffer[4096];
-					DWORD bytesRead;
-					while (InternetReadFile(hRequest, buffer, sizeof(buffer) - 1, &bytesRead) && bytesRead)
-					{
-						buffer[bytesRead] = 0;
-						warning( buffer);
-					}
-				}
-				InternetCloseHandle(hRequest);
-			}
-			InternetCloseHandle(hConnect);
-		}
-		InternetCloseHandle(hInternet);
+		warning("HTTP Error: %d\n", response.status_code);
+		return;
 	}
 
-//msg("Status Code: %d\n", response.status_code);
-//msg("Response Text: %s\n", response.text.substr(0, 100).c_str());
-
-/*CURL* curl;
-CURLcode res;
-
-curl_global_init(CURL_GLOBAL_DEFAULT);
-curl = curl_easy_init();
-if (curl)
-{
-	std::string url = "https://openrouter.ai/api/v1/chat/completions";
-	std::string api_key = "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";
-	std::string body = R"({
-		"model": "deepseek/deepseek-r1:free",
-		"messages": [
-			{"role": "user", "content": "Напиши код helloworld на асм"}
-		],
-		"temperature": 0,
-		"top_p": 1,
-		"top_k": 0,
-		"frequency_penalty": 0,
-		"presence_penalty": 0,
-		"repetition_penalty": 1,
-		"min_p": 0,
-		"top_a": 0
-	})";
-
-	struct curl_slist* headers = NULL;
-	headers = curl_slist_append(headers, "Content-Type: application/json");
-	headers = curl_slist_append(headers, ("Authorization: Bearer " + api_key).c_str());
-
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-	res = curl_easy_perform(curl);
-	if (res != CURLE_OK)
-	{
-		warning("curl_easy_perform() failed: ", curl_easy_strerror(res), "\n");
-	}
-
-	curl_easy_cleanup(curl);
-	curl_slist_free_all(headers);
-}
-curl_global_cleanup();*/
+	// Выводим первые 100 символов в warning
+	warning("Response: %.100s\n", response.text.c_str());
 }
 
 
