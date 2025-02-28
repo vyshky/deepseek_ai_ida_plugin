@@ -5,3 +5,5 @@
 #include <hexrays.hpp>
 #include <map>  
 #include <string>
+#include <algorithm>
+

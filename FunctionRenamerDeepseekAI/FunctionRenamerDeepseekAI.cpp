@@ -15,7 +15,6 @@
 #endif
 
 
-
  //--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t
 {
@@ -267,7 +266,7 @@ bool idaapi plugin_ctx_t::run(size_t)
 
 	DeepSeekAI deepSeekAI = DeepSeekAI();
 
-	//SendRequestToDeepseek(decompiled_code);
+	deepSeekAI.SendRequestToDeepseek(decompiled_code);
 
 	mark_cfunc_dirty(pfn->start_ea);
 	return true;
