@@ -12,6 +12,7 @@
   <ItemGroup>
     <ClInclude Include="DeepSeekAI.hpp" />
     <ClInclude Include="FunctionUtility.hpp" />
+    <ClInclude Include="Header.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
