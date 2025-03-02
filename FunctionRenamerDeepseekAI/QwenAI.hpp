@@ -4,19 +4,14 @@ using ::nlohmann::json;
 #include "Header.h"
 #endif
 
-class DeepSeekAI {
-	nlohmann::json jsonData = {
-			{"happy", 2},
-	};
-
-
+class QwenAI {
 	std::string promt = R"(I need you to extract all variables, arguments, functions, the name of the current function, global variables.
 Then you need to rename them so that the code is understandable to a person who does not know how to reverse engineer.
 Then output json of approximately this type, found object: renamed object.
 Return json, highlight in front and behind with these symbols | START_JSON | and | END_JSON | so that I can parse them later.
 Output only json without a description.
 Do not write anything except json.
-Answer in Russian.
+Сheck yourself to make sure you renamed all functions, arguments, globals, the current function. Make sure everything is renamed and nothing is missed.
 Example - |START_JSON|
 {
 'currentFunction': 'WinMain',
@@ -86,15 +81,15 @@ Example - |START_JSON|
 		return promt + R"( - |START_CODE|)" + decompiledCode + R"(|END_CODE|)";
 	}
 public:
-	DeepSeekAI() {}
-	~DeepSeekAI() {}
+	QwenAI() {}
+	~QwenAI() {}
 
 	std::string SendRequestToDeepseek(const std::string& decompiledCode)
 	{
 		std::string promt = generatePromt(decompiledCode);
 		std::replace(promt.begin(), promt.end(), '\"', '\'');
 		std::string body = R"({
-          "model": "deepseek/deepseek-r1-distill-qwen-32b",
+          "model": "deepseek/deepseek-r1:free",
           "messages": [
               {"role": "user", "content": ")" + promt + R"("}
           ],
@@ -114,7 +109,7 @@ public:
 			cpr::Url{ "https://openrouter.ai/api/v1/chat/completions" },
 			cpr::Header{
 				{"Content-Type", "application/json"},
-				{"Authorization", "Bearer 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"},
+				{"Authorization", "Bearer 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"},
 				{ "User-Agent", "PostmanRuntime/7.43.0" },
 				{ "Accept", "*/*" },
 			},
@@ -125,7 +120,7 @@ public:
 		if (response.status_code != 200)
 		{
 			warning("HTTP Error: %d\n", response.status_code);
-			return;
+			return "";
 		}
 
 		// Извлекаем content из json ответа
@@ -145,6 +140,7 @@ public:
 		removeWord(content, "|START_JSON|");
 		removeWord(content, "|END_JSON|");
 		std::replace(content.begin(), content.end(), '\'', '\"');
+		msg("Content: %s\n", content.c_str());
 		return content;
 	}
 };
