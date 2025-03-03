@@ -10,7 +10,7 @@
     <ClCompile Include="FunctionRenamerDeepseekAI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="QwenAI.hpp" />
+    <ClInclude Include="DeepSeek.hpp" />
     <ClInclude Include="FunctionUtility.hpp" />
     <ClInclude Include="Header.h" />
   </ItemGroup>

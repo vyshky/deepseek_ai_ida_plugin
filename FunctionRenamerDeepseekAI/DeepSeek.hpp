@@ -4,7 +4,7 @@ using ::nlohmann::json;
 #include "Header.h"
 #endif
 
-class QwenAI {
+class DeepSeekAI {
 	std::string promt = R"(I need you to extract all variables, arguments, functions, the name of the current function, global variables.
 Then you need to rename them so that the code is understandable to a person who does not know how to reverse engineer.
 Then output json of approximately this type, found object: renamed object.
@@ -81,15 +81,15 @@ Example - |START_JSON|
 		return promt + R"( - |START_CODE|)" + decompiledCode + R"(|END_CODE|)";
 	}
 public:
-	QwenAI() {}
-	~QwenAI() {}
+	DeepSeekAI() {}
+	~DeepSeekAI() {}
 
 	std::string SendRequestToDeepseek(const std::string& decompiledCode)
 	{
 		std::string promt = generatePromt(decompiledCode);
 		std::replace(promt.begin(), promt.end(), '\"', '\'');
 		std::string body = R"({
-          "model": "deepseek/deepseek-r1:free",
+          "model": "DeepSeek-R1",
           "messages": [
               {"role": "user", "content": ")" + promt + R"("}
           ],
@@ -104,17 +104,32 @@ public:
       })";
 		body = sanitizeString(body);
 
-		// Отправка POST-запроса с cpr
-		cpr::Response response = cpr::Post(
-			cpr::Url{ "https://openrouter.ai/api/v1/chat/completions" },
-			cpr::Header{
-				{"Content-Type", "application/json"},
-				{"Authorization", "Bearer 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"},
-				{ "User-Agent", "PostmanRuntime/7.43.0" },
-				{ "Accept", "*/*" },
-			},
-			cpr::Body{ body }
+		// Создаем задачу для выполнения запроса
+		auto request_task = std::async(std::launch::async, [&body]() {
+			return cpr::Post(
+				cpr::Url{ "https://chatapi.akash.network/api/v1/chat/completions" },
+				cpr::Header{
+					{"Authorization", "Bearer sk-jNkY2xGSsSBsrQmRUgzdCA"},
+					{"Content-Type", "application/json"},
+					//{"Accept", "*/*"},
+					/*{"Host", "chatapi.akash.network"},
+					{"Accept-Encoding", "gzip, deflate, br"},
+					{"Connection", "keep-alive"},
+					{"Accept-Language", "en-US,en;q=0.9,ru;q=0.8"},*/
+					{"Content-Length", std::to_string(body.size())}
+				},
+				cpr::Body{ body }
 			);
+			});
+
+		// Ожидаем завершения задачи в течение 5 минут
+		if (request_task.wait_for(std::chrono::minutes(5)) == std::future_status::timeout) {
+			warning("Request timed out after 5 minutes.\n");
+			return "";
+		}
+
+		// Получаем результат запроса
+		cpr::Response response = request_task.get();
 
 		// Проверяем статус запроса
 		if (response.status_code != 200)

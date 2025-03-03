@@ -9,7 +9,7 @@
  */
 
 
-#include "QwenAI.hpp"
+#include "DeepSeek.hpp"
 #include "FunctionUtility.hpp"
 #ifndef HEADER_H
 #include "Header.h"
@@ -73,68 +73,77 @@ void rename_variables(func_t* pfn, const char* funcName) {
 //--------------------------------------------------------------------------
 bool idaapi plugin_ctx_t::run(size_t)
 {
-	ea_t screen_ea = get_screen_ea();
-	func_t* pfn = get_func(get_screen_ea());
-	if (pfn == nullptr)
-	{
-		warning("Please position the cursor within a function");
-		return true;
+	try {
+		ea_t screen_ea = get_screen_ea();
+		func_t* pfn = get_func(get_screen_ea());
+		if (pfn == nullptr)
+		{
+			warning("Please position the cursor within a function");
+			return true;
+		}
+		msg("Current function start address: %a\n", pfn->start_ea);
+
+		// Парсим функцию и сохраняем найденные переменные, функции и имя текущей функции
+		save_current_function_name(pfn);
+		save_variables(pfn);
+		save_functions(pfn);
+
+
+		// Подготовка промта для ai и получения переименованной таблицы функций и переменных в формате json
+		std::string decompiled_code;
+		get_decompiled_code(pfn, decompiled_code);
+
+
+		DeepSeekAI ai = DeepSeekAI();
+		std::string renamedElementsJson = ai.SendRequestToDeepseek(decompiled_code);
+
+		nlohmann::json json = nlohmann::json::parse(renamedElementsJson);
+		std::string currentFunctionName = json["currentFunction"];
+
+		auto args = json["args"];
+		for (auto& arg : args.items()) {
+			std::string key = arg.key();
+			std::string value = arg.value();
+			var_names[key] = value;
+		}
+
+		auto variables = json["variables"];
+		for (auto& variable : variables.items()) {
+			std::string key = variable.key();
+			std::string value = variable.value();
+			var_names[key] = value;
+		}
+
+		auto functions = json["functions"];
+		for (auto& function : functions.items()) {
+			std::string key = function.key();
+			std::string value = function.value();
+			function_names[key] = value;
+		}
+
+		auto globals = json["globals"];
+		for (auto& global : globals.items()) {
+			std::string key = global.key();
+			std::string value = global.value();
+			var_names[key] = value;
+		}
+
+		// Переименование всех функций
+		rename_current_function(pfn, currentFunctionName);
+		rename_all_lvar(pfn);
+		rename_all_functions(pfn);
+
+		// Очищаем все сохраненные переменные и функции
+		function_names.clear();
+		var_names.clear();
+		current_function.clear();
+
+		mark_cfunc_dirty(pfn->start_ea);
 	}
-	msg("Current function start address: %a\n", pfn->start_ea);
-
-	// Парсим функцию и сохраняем найденные переменные, функции и имя текущей функции
-	save_current_function_name(pfn);
-	save_variables(pfn);
-	save_functions(pfn);
-
-
-	// Подготовка промта для ai и получения переименованной таблицы функций и переменных в формате json
-	std::string decompiled_code;
-	get_decompiled_code(pfn, decompiled_code);
-	QwenAI ai = QwenAI();
-	std::string renamedElementsJson = ai.SendRequestToDeepseek(decompiled_code);
-	nlohmann::json json = nlohmann::json::parse(renamedElementsJson);
-	std::string currentFunctionName = json["currentFunction"];
-
-	auto args = json["args"];
-	for (auto& arg : args.items()) {
-		std::string key = arg.key();
-		std::string value = arg.value();
-		var_names[key] = value;
+	catch (const std::exception& e) {
+		msg("Exception occurred: %s\n", e.what());
+		return false;
 	}
-
-	auto variables = json["variables"];
-	for (auto& variable : variables.items()) {
-		std::string key = variable.key();
-		std::string value = variable.value();
-		var_names[key] = value;
-	}
-
-	auto functions = json["functions"];
-	for (auto& function : functions.items()) {
-		std::string key = function.key();
-		std::string value = function.value();
-		function_names[key] = value;
-	}
-
-	auto globals = json["globals"];
-	for (auto& global : globals.items()) {
-		std::string key = global.key();
-		std::string value = global.value();
-		var_names[key] = value;
-	}
-
-	// Переименование всех функций
-	rename_current_function(pfn, currentFunctionName);
-	rename_all_lvar(pfn);
-	rename_all_functions(pfn);
-
-	// Очищаем все сохраненные переменные и функции
-	function_names.clear();
-	var_names.clear();
-	current_function.clear();
-
-	mark_cfunc_dirty(pfn->start_ea);
 	return true;
 }
 
