@@ -74,6 +74,10 @@ class DeepSeekAI {
 			throw std::runtime_error("Request timed out after 15 seconds.");
 		}
 		cpr::Response response = request_task.get();
+		if (response.status_code != 200)
+		{
+			throw std::runtime_error("HTTP Error: " + std::to_string(response.status_code));
+		}
 		return response.cookies;
 	}
 	//**
