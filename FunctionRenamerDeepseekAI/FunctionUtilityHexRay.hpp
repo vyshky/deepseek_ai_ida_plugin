@@ -117,7 +117,7 @@ void rename_all_lvars_and_globalvars(func_t* pfn) {
 		
 		ea_t address_var = get_name_ea(pfn->start_ea, var.first.c_str());
 		ssize_t result = get_ea_name(&name, address_var, GN_LOCAL);
-		if (result == 11) {
+		if (result != -1) {
 			// globalVar
 			set_name(address_var, new_name.c_str(), SN_FORCE | SN_NODUMMY);
 		}
