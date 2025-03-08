@@ -27,13 +27,13 @@
 ---
 
 #### Функции:  
-- **`SendRequestToDeepseek(const std::string& decompiledCode)`**:  
+- `SendRequestToDeepseek(const std::string& decompiledCode)`:  
   Основной метод для отправки декомпилированного кода в DeepSeek. Обрабатывает ответ: удаляет лишние символы, извлекает JSON между `|START_JSON|` и `|END_JSON|`, заменяет кавычки.  
-- **`generateBody(const std::string& decompiledCode)`**:  
+- `generateBody(const std::string& decompiledCode)`:  
   Формирует тело запроса для AI: добавляет системный промпт, оборачивает код в `|START_CODE|`/`|END_CODE|`, заменяет двойные кавычки на одинарные и санирует строку.  
-- **`getSession()`**:  
+- `getSession()`:  
   Получает сессионные куки для аутентификации в API Akash Network через GET-запрос. Таймаут: 15 секунд.  
-- **`postToChat(std::string body, cpr::Cookies cookies)`**:  
+- `postToChat(std::string body, cpr::Cookies cookies)`:  
   Отправляет POST-запрос с телом и куками в API чата Akash. Таймаут: 10 минут. Обрабатывает HTTP-ошибки (например, статус ≠ 200).  
 
 ---
