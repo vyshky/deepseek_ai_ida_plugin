@@ -3,7 +3,7 @@
 
 #include "cpr/cpr.h"
 #include <hexrays.hpp>
-#include <map>  
+#include <map>
 #include <string>
 #include <algorithm>
-
+#include <regex>

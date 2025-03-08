@@ -2,7 +2,6 @@
 #include "Header.h"
 #endif
 
-
 std::map<std::string, std::string> function_names;
 std::map<std::string, std::string> var_names;
 std::map<std::string, std::string> current_function;
@@ -109,15 +108,22 @@ void rename_current_function(func_t* pfn, const std::string& new_name) {
 	}
 }
 
-void rename_all_lvar(func_t* pfn) {
+// lvar è globalvar
+void rename_all_lvars_and_globalvars(func_t* pfn) {
+	qstring name;
 	for (const auto& var : var_names) {
 		const std::string& old_name = var.first;
 		const std::string& new_name = var.second;
-		if (!rename_lvar(pfn->start_ea, old_name.c_str(), new_name.c_str())) {
-			msg("Failed to rename variable %s to %s\n", old_name.c_str(), new_name.c_str());
+		
+		ea_t address_var = get_name_ea(pfn->start_ea, var.first.c_str());
+		ssize_t result = get_ea_name(&name, address_var, GN_LOCAL);
+		if (result == 11) {
+			// globalVar
+			set_name(address_var, new_name.c_str(), SN_FORCE | SN_NODUMMY);
 		}
 		else {
-			msg("Variable %s renamed to %s\n", old_name.c_str(), new_name.c_str());
+			// lvar
+			rename_lvar(pfn->start_ea, old_name.c_str(), new_name.c_str());
 		}
 	}
 }

@@ -10,7 +10,7 @@
 
 
 #include "DeepSeekAI.hpp"
-#include "FunctionUtility.hpp"
+#include "FunctionUtilityHexRay.hpp"
 #ifndef HEADER_H
 #include "Header.h"
 #endif
@@ -37,45 +37,11 @@ static plugmod_t* idaapi init()
 	return new plugin_ctx_t;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
-void rename_specific_function(const std::string& old_name, const std::string& new_name) {
-	ea_t func_ea = get_name_ea(BADADDR, old_name.c_str());
-	if (func_ea != BADADDR) {
-		set_name(func_ea, new_name.c_str(), SN_FORCE | SN_NODUMMY);
-		function_names[old_name] = new_name;
-		msg("Function %s renamed to %s\n", old_name.c_str(), new_name.c_str());
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
-
-void rename_variables(func_t* pfn, const char* funcName) {
-	func_item_iterator_t fii(pfn);
-	for (bool ok = fii.set(pfn); ok; ok = fii.next_addr())
-	{
-		ea_t ea = fii.current();
-		set_name(ea, "new_function_name", SN_NON_PUBLIC | SN_NON_WEAK | SN_NOLIST | SN_FORCE | SN_NODUMMY);
-	}
-	mark_cfunc_dirty(pfn->start_ea);
-}
-
-
-
-
-// TODO :: 
-// 1. Получаем Json
-// 2. Записываем все значения мапы старый_нейм -> новый_нейм
-// 3. Переименовываем функцю
-// 4. Преименовываем переменные
-// 5. Переименовываем все функции
-//--------------------------------------------------------------------------
 bool idaapi plugin_ctx_t::run(size_t)
 {
 	try {
 		ea_t screen_ea = get_screen_ea();
-		func_t* pfn = get_func(get_screen_ea());
+		func_t* pfn = get_func(screen_ea);
 		if (pfn == nullptr)
 		{
 			warning("Please position the cursor within a function");
@@ -87,7 +53,6 @@ bool idaapi plugin_ctx_t::run(size_t)
 		save_current_function_name(pfn);
 		save_variables(pfn);
 		save_functions(pfn);
-
 
 		// Подготовка промта для ai и получения переименованной таблицы функций и переменных в формате json
 		std::string decompiled_code;
@@ -130,7 +95,7 @@ bool idaapi plugin_ctx_t::run(size_t)
 
 		// Переименование всех функций
 		rename_current_function(pfn, currentFunctionName);
-		rename_all_lvar(pfn);
+		rename_all_lvars_and_globalvars(pfn);
 		rename_all_functions(pfn);
 
 		// Очищаем все сохраненные переменные и функции
