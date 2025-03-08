@@ -62,33 +62,6 @@ class DeepSeekAI {
 		body = sanitize_string(body);
 		return body;
 	}
-
-public:
-	DeepSeekAI() {}
-	~DeepSeekAI() {}
-	//**
-	// * @brief Отправить запрос в чат акаша, получить ответ, привести его к удобному формату для дальнейшей обработки через json библиотеку
-	// * @return Готовый json ответ
-	//**
-	std::string SendRequestToDeepseek(const std::string& decompiledCode)
-	{
-		std::string body = generateBody(decompiledCode);
-		cpr::Cookies cookies = getSession();
-		std::string responseText = postToChat(body, cookies);
-
-		responseText = remove_line_containing(responseText, "f:{");
-		responseText = remove_line_containing(responseText, "e:{");
-		responseText = remove_line_containing(responseText, "d:{");
-		responseText = remove_all_words(responseText, "0:\"");
-		responseText = remove_all_words(responseText, "\"\n");
-		responseText = remove_all_tags(responseText, R"(<think>[\s\S]*?</think>)");
-		responseText = extract_tag_bodies(responseText, R"(\|START_JSON\|([\s\S]*?)\|END_JSON\|)");
-		responseText = remove_all_words(responseText, "\\n");
-		responseText = remove_all_words(responseText, "\\");
-		responseText = replaceAll(responseText, "\'", "\"");
-		return responseText;
-	}
-
 	//**
 	// * @brief Получить сессию акаш чата
 	// * @return session_token
@@ -132,5 +105,31 @@ public:
 			throw std::runtime_error("HTTP Error: " + std::to_string(response.status_code));
 		}
 		return response.text;
+	}
+
+public:
+	DeepSeekAI() {}
+	~DeepSeekAI() {}
+	//**
+	// * @brief Отправить запрос в чат акаша, получить ответ, привести его к удобному формату для дальнейшей обработки через json библиотеку
+	// * @return Готовый json ответ
+	//**
+	std::string SendRequestToDeepseek(const std::string& decompiledCode)
+	{
+		std::string body = generateBody(decompiledCode);
+		cpr::Cookies cookies = getSession();
+		std::string responseText = postToChat(body, cookies);
+
+		responseText = remove_line_containing(responseText, "f:{");
+		responseText = remove_line_containing(responseText, "e:{");
+		responseText = remove_line_containing(responseText, "d:{");
+		responseText = remove_all_words(responseText, "0:\"");
+		responseText = remove_all_words(responseText, "\"\n");
+		responseText = remove_all_tags(responseText, R"(<think>[\s\S]*?</think>)");
+		responseText = extract_tag_bodies(responseText, R"(\|START_JSON\|([\s\S]*?)\|END_JSON\|)");
+		responseText = remove_all_words(responseText, "\\n");
+		responseText = remove_all_words(responseText, "\\");
+		responseText = replaceAll(responseText, "\'", "\"");
+		return responseText;
 	}
 };
