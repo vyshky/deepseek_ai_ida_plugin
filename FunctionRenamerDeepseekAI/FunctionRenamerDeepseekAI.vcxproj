@@ -54,9 +54,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>D:\programs\Revers engineering\IDA9.0\plugins\XXX_%(Filename).dll</OutputFile>
-      <AdditionalDependencies>C:\vcpkg\installed\x64-windows\debug\lib\cpr.lib;C:\vcpkg\installed\x64-windows\debug\lib\libcurl-d.lib;C:\vcpkg\installed\x64-windows\debug\lib\zlibd.lib;D:\programs\Revers engineering\IDA9.0\idasdk90\lib\x64_win_vc_64\ida.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProjectDirectory)\libs\cpr.lib;$(MSBuildProjectDirectory)\libs\libcurl-d.lib;$(MSBuildProjectDirectory)\libs\zlibd.lib;$(MSBuildProjectDirectory)\libs\ida.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/EXPORT:PLUGIN</AdditionalOptions>
-      <AdditionalLibraryDirectories>C:\vcpkg\installed\x64-windows\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
