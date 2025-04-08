@@ -92,4 +92,4 @@ rename_all_functions(pfn);
 ```  
 
 
-[![Превью видео](https://img.youtube.com/vi/z6uhJats594/0.jpg)](https://www.youtube.com/watch?v=z6uhJats594)
+📺 **YouTube-канал**: [Смотреть видео](https://www.youtube.com/watch?v=z6uhJats594)
