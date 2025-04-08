@@ -90,3 +90,6 @@ rename_current_function(pfn, "newMain");
 rename_all_lvars_and_globalvars(pfn);
 rename_all_functions(pfn);
 ```  
+
+
+[![Превью видео](https://img.youtube.com/vi/z6uhJats594/0.jpg)](https://www.youtube.com/watch?v=z6uhJats594)
