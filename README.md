@@ -1,5 +1,7 @@
 ﻿# FunctionRenamerDeepseekAI
 
+## Комбинация клавиш ALT+SHIFT+1
+
 ## Файлы и их функции
 
 ### FunctionRenamerDeepseekAI.cpp
