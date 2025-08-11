@@ -68,7 +68,14 @@ class DeepSeekAI {
 	//**
 	cpr::Cookies getSession() {
 		auto request_task = std::async(std::launch::async, []() {
-			return cpr::Get(cpr::Url{ "https://chat.akash.network/api/auth/session" });
+			return cpr::Get(
+				cpr::Url{ "https://chat.akash.network/api/auth/session" },
+				cpr::Header{
+					{"User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" },
+					{ "Origin","https://chat.akash.network" },
+					{ "Referer","https://chat.akash.network/" }
+				}
+				);
 			});
 		if (request_task.wait_for(std::chrono::seconds(15)) == std::future_status::timeout) {
 			throw std::runtime_error("Request timed out after 15 seconds.");
@@ -94,9 +101,14 @@ class DeepSeekAI {
 				cpr::Cookies(
 					{ it->GetName() ,it->GetValue() }
 				),
+				cpr::Header{
+					{"User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" },
+					{ "Origin","https://chat.akash.network" },
+					{ "Referer","https://chat.akash.network/" }
+				},
 				cpr::Body{ body }
 			);
-			});
+		});
 		// Ожидаем завершения задачи в течение 10 минут
 		if (request_task.wait_for(std::chrono::minutes(10)) == std::future_status::timeout) {
 			throw std::runtime_error("Request timed out after 10 minutes.");
