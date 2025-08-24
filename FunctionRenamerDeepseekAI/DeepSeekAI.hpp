@@ -12,7 +12,8 @@ class DeepSeekAI {
 		Output only json without a description.
 		Do not write anything except json.
 		Ñheck yourself to make sure you renamed all functions, arguments, globals, the current function. Make sure everything is renamed and nothing is missed.
-		Example - 
+		Example 
+        Do not change names of variables, functions, global variables that relate to windows api or linux api - 
 |START_JSON|
 		{
 			'currentFunction': 'WinMain',
@@ -51,7 +52,7 @@ class DeepSeekAI {
 		std::replace(result.begin(), result.end(), '\"', '\'');
 		std::string body = R"({
           "id": "aYMA3tLVlZuW4fXN",
-		  "model": "DeepSeek-V3.1",
+		  "model": "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8",
           "system": "You are a helpful assistant.",
 		  "messages": [
 			  {"role": "user", "content": ")" + result + R"(",
