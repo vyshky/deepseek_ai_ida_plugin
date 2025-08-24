@@ -50,12 +50,18 @@ class DeepSeekAI {
 		std::string result = promt + R"( - |START_CODE|)" + decompiledCode + R"(|END_CODE|)";
 		std::replace(result.begin(), result.end(), '\"', '\'');
 		std::string body = R"({
-          "id": "Jr9GKaVHYnhWce9g",
+          "id": "aYMA3tLVlZuW4fXN",
 		  "model": "DeepSeek-V3.1",
           "system": "You are a helpful assistant.",
 		  "messages": [
-			  {"role": "user", "content": ")" + result + R"("}
-		  ],
+			  {"role": "user", "content": ")" + result + R"(",
+									 "parts": [
+									 {
+									   "type": "text",
+									   "text": ")" + result + R"("
+									 }]
+
+          }],
 		  "temperature": 0.6,
 		  "topP": 0.95
 	  })";
