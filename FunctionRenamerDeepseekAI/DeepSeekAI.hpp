@@ -51,7 +51,7 @@ class DeepSeekAI {
 		std::replace(result.begin(), result.end(), '\"', '\'');
 		std::string body = R"({
           "id": "Jr9GKaVHYnhWce9g",
-		  "model": "DeepSeek-R1-0528",
+		  "model": "DeepSeek-V3.1",
           "system": "You are a helpful assistant.",
 		  "messages": [
 			  {"role": "user", "content": ")" + result + R"("}
