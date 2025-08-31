@@ -1,6 +1,7 @@
 ﻿# FunctionRenamerDeepseekAI
 
 ## Комбинация клавиш ALT+SHIFT+1
+## Плагин тестировался на этой версии IDA - https://t.me/osiesquad/47579
 
 ## Файлы и их функции
 
