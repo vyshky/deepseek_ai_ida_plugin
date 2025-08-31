@@ -5,51 +5,73 @@
 #endif
 
 class DeepSeekAI {
-	std::string promt = R"(I need you to extract all variables, arguments, functions, the name of the current function, global variables.
-		Then you need to rename them so that the code is understandable to a person who does not know how to reverse engineer.
-		Then output json of approximately this type, found object: renamed object.
-		Return json, highlight in front and behind with these symbols | START_JSON | and | END_JSON | so that I can parse them later.
-		Output only json without a description.
-		Do not write anything except json.
-		Сheck yourself to make sure you renamed all functions, arguments, globals, the current function. Make sure everything is renamed and nothing is missed.
-		Do not change names of variables, functions, global variables that relate to windows api or linux api.
-		Don't change the case, i.e. lower and upeeer cases, keep them in their original state.
-		Example - 
+	std::string promt =
+R"(I need you to extract all variables, arguments, functions, the name of the current function, and global variables.
+Then you need to rename them so that the code is understandable to a person who does not know how to reverse engineer.
+
+**Renaming rules:**
+
+1. Use Hungarian notation everywhere for variables, arguments, and globals.
+2. Do not rename functions, variables, or globals that already have meaningful names (for example, `WinMain`, `RenderFrame`, `playerHealth`).
+3. Don't rename Windows API, Linux API or other known external library functions/variables, but you should definitely return them in the response, double check that they are all in the response.
+4. Keep the original letter case (lower and upper case) when renaming.
+5. If the object has no meaningful name (like `v1`, `a2`, `sub_140123456`), rename it into a descriptive one.
+6. The current function must also be renamed if it does not already have a meaningful name.
+
+**Output format:**
+
+* Return JSON in this format:
+
 |START_JSON|
-		{
-			'currentFunction': 'WinMain',
-			'args' : {
-				'hInstance': 'appInstance',
-				'hPrevInstance' : 'prevAppInstance',
-				'lpCmdLine' : 'commandLineArgs',
-				'nShowCmd' : 'windowDisplayMode'
-			},
-			'variables': {
-				'CommandLineW': 'rawCommandLine',
-				'v6' : 'mutexNameRef',
-				'MutexW' : 'mutexHandle',
-				'v8' : 'crashUploadResult',
-				'v9' : 'finalResult',
-				'lpName' : 'mutexNameBuffer',
-				'v12' : 'bufferStorage'
-			},
-			'functions': {
-				'sub_142346208': 'checkCommandLineArgument',
-				'sub_14010F330' : 'initMutexName',
-				'sub_140103D40' : 'cleanupMutexName',
-				'sub_1400D3AD0' : 'handleCrashUpload',
-				'sub_141ACAA30' : 'runMainLogic',
-				'sub_141ACA770' : 'initializeApplication',
-				'sub_1400E33C0' : 'startMainApplication'
-			},
-			'globals': {
-				'byte_1439E1E17': 'applicationInitializedFlag'
-			}
-		}
-|END_JSON|)";
+        {
+          'currentFunction': 'WinMain', // function WinMain
+          'args': {
+            'hInstance': 'hInstance', // handle Instance
+            'hPrevInstance': 'hPrevInstance', // handle Previous Instance
+            'lpCmdLine': 'lpCmdLine', // long pointer to zero-terminated string Command Line
+            'nShowCmd': 'nShowCmd' // numeric Show Command
+          },
+          'variables': {
+			'v3': 'phkResult' // pointer handler winapi argument passed to the function
+            'CommandLineW': 'pwszRawCommandLine', // pointer to wide character string Raw Command Line
+            'v6': 'pszMutexNameRef', // pointer to zero-terminated string Mutex Name Reference
+            'MutexW': 'hMutexHandle', // handle Mutex
+            'v8': 'iCrashUploadResult', // integer Crash Upload Result
+            'v9': 'iFinalResult', // integer Final Result
+            'lpName': 'pszMutexNameBuffer', // long pointer to zero-terminated string Mutex Name Buffer
+            'v12': 'pBufferStorage', // pointer to Buffer Storage
+            'dwErrorCode': 'dwError', // DWORD Error Code
+            'lParam': 'lParamValue', // long parameter value
+            'wParam': 'wParamValue', // word parameter value
+            'lpRect': 'lprcRect', // long pointer to RECT structure
+            'ptCursor': 'ptCursorPos', // POINT structure Cursor Position
+			'array': 'aiCoords' // 'type' == 't' - type arr[10]; should be used as tArray or atData
+			'Class::var22': 'Class::iCounter' // Use 'Class::iCounter' instead of 'Class::var22' Class identifier should not be renamed
+          },
+          'functions': {
+            'sub_142346208': 'CheckCommandLineArgument', // Check Command Line Argument
+            'sub_14010F330': 'InitMutexName', // Initialize Mutex Name
+            'sub_140103D40': 'CleanupMutexName', // Cleanup Mutex Name
+            'sub_1400D3AD0': 'HandleCrashUpload', // Handle Crash Upload
+            'sub_141ACAA30': 'RunMainLogic', // Run Main Logic
+            'sub_141ACA770': 'InitApplication', // Initialize Application
+            'sub_1400E33C0': 'StartMainApplication' // Start Main Application
+          },
+          'globals': {
+            'byte_1439E1E17': 'gbApplicationInitializedFlag' // byte Application Initialized Flag
+          }
+        }
+|END_JSON|
+
+**Important:**
+
+* Output **only JSON**, without descriptions, explanations, or extra text.
+* Always return json between |START_JSON| and |END_JSON|.
+
+** The code that needs to be renamed is below **)";
 
 	std::string generateBody(const std::string& decompiledCode) {
-		std::string result = promt + R"( - |START_CODE|)" + decompiledCode + R"(|END_CODE|)";
+		std::string result = promt + "\r\n" + R"(|START_CODE|)" + "\r\n" + decompiledCode + R"(|END_CODE|)";
 		std::replace(result.begin(), result.end(), '\"', '\'');
 		std::string body = R"({
           "id": "aYMA3tLVlZuW4fXN",
@@ -83,7 +105,7 @@ class DeepSeekAI {
 					{ "Origin","https://chat.akash.network" },
 					{ "Referer","https://chat.akash.network/" }
 				}
-				);
+			);
 			});
 		if (request_task.wait_for(std::chrono::seconds(15)) == std::future_status::timeout) {
 			throw std::runtime_error("Request timed out after 15 seconds.");
@@ -116,7 +138,7 @@ class DeepSeekAI {
 				},
 				cpr::Body{ body }
 			);
-		});
+			});
 		// Ожидаем завершения задачи в течение 10 минут
 		if (request_task.wait_for(std::chrono::minutes(10)) == std::future_status::timeout) {
 			throw std::runtime_error("Request timed out after 10 minutes.");
