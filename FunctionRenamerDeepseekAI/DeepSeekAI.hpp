@@ -12,8 +12,9 @@ class DeepSeekAI {
 		Output only json without a description.
 		Do not write anything except json.
 		Ñheck yourself to make sure you renamed all functions, arguments, globals, the current function. Make sure everything is renamed and nothing is missed.
-		Example 
-        Do not change names of variables, functions, global variables that relate to windows api or linux api - 
+		Do not change names of variables, functions, global variables that relate to windows api or linux api.
+		Don't change the case, i.e. lower and upeeer cases, keep them in their original state.
+		Example - 
 |START_JSON|
 		{
 			'currentFunction': 'WinMain',
