@@ -17,6 +17,7 @@ Then you need to rename them so that the code is understandable to a person who 
 4. Keep the original letter case (lower and upper case) when renaming.
 5. If the object has no meaningful name (like `v1`, `a2`, `sub_140123456`), rename it into a descriptive one.
 6. The current function must also be renamed if it does not already have a meaningful name.
+7. Adapt to context: Be prepared to adapt the notation to a specific context or task. Sometimes a simpler or more flexible naming system may be more appropriate. If there are more than 2 notations in one name, reduce it to 1.
 
 **Output format:**
 
@@ -45,7 +46,7 @@ Then you need to rename them so that the code is understandable to a person who 
             'wParam': 'wParamValue', // word parameter value
             'lpRect': 'lprcRect', // long pointer to RECT structure
             'ptCursor': 'ptCursorPos', // POINT structure Cursor Position
-			'array': 'aiCoords' // 'type' == 't' - type arr[10]; should be used as tArray or atData
+			'array': 'aiCoords' // 'type' == 't' - type arr[10]; should be used as tArray
 			'Class::var22': 'Class::iCounter' // Use 'Class::iCounter' instead of 'Class::var22' Class identifier should not be renamed
           },
           'functions': {
