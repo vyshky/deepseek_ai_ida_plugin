@@ -11,6 +11,9 @@
 ---
 
 #### Сборка
+
+Для сборки необходим [meson](https://mesonbuild.com/SimpleStart.html)
+
 ```
 cmake -B build -DIDA_SDK=path/to/idasdk
 cmake --build build
