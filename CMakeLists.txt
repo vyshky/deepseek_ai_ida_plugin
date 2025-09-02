@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.20)
+project(DeepseekAI_IDA_Plugin)
+
+add_subdirectory(FunctionRenamerDeepseekAI)
